@@ -8,18 +8,19 @@ class HTMLNode:
         self.props = props
 
     def __repr__(self):
-        report  = f"__HTMLNode__\n"
-        report += f"tag: {self.tag}\n"
-        report += f"value: {self.value}\n"
-        report += f"children: \n"
+        report  = f"HTMLNode- tag:{self.tag}, value: {self.value}, children: "
         if self.children:
             for child in self.children:
-                report += f" --> {child}\n"
-        report += f"properties: \n"
+                report += f" --> {child}"
+        else:
+            report += f"None"
+        report += f", properties: "
         if self.props:
             for prop in self.props:
-                report += f" --> {prop}: {self.props[prop]}\n"    
-        report += "\n"
+                report += f"{prop}: {self.props[prop]} "
+        else:
+            report += f"None"
+    
         return report
     
 
@@ -56,4 +57,22 @@ class LeafNode(HTMLNode):
         return f"<{self.tag}{props_str}>{self.value}</{self.tag}>"
     
 class ParentNode(HTMLNode):
-    def __init__(self, tag, value, children, props)
+    def __init__(self, tag, children, props=None):
+       super().__init__(tag, None, children, props)
+
+    def __repr__(self):
+        return f"ParentNode- tag: {self.tag}, children: {self.children}, props: {self.props}"
+    
+    def to_html(self):
+        # print(f"node: {self}")
+        if self.tag is None:
+            raise ValueError
+        if self.children is None:
+            raise ValueError("Parent node contains no children.") 
+        
+        children_html = ""
+        # print(f"Child list: {self.children}")
+        for child in self.children:
+            children_html += child.to_html()
+        return f"<{self.tag}{self.props_to_html()}>{children_html}</{self.tag}>"
+            
