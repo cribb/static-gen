@@ -1,6 +1,6 @@
 import unittest
-
-from htmlnode import HTMLNode, LeafNode, ParentNode
+from textnode import TextType, TextNode
+from htmlnode import HTMLNode, LeafNode, ParentNode, text_node_to_html_node
 
 
 class TestHTMLNode(unittest.TestCase):
@@ -14,6 +14,33 @@ class TestHTMLNode(unittest.TestCase):
         htmlnode = HTMLNode(tag=tag, value=value, children=children, props=props)
         # print(htmlnode)
         # print(f"HTML conversion to: {htmlnode.props_to_html()}.")
+
+    def test_text(self):
+        node = TextNode("This is a text node", TextType.TEXT)
+        html_node = text_node_to_html_node(node)
+        self.assertEqual(html_node.tag, None)
+        self.assertEqual(html_node.value, "This is a text node")
+
+    def test_bold(self):
+        node = TextNode("This is a BOLD text node", TextType.BOLD)
+        html_node = text_node_to_html_node(node)
+        self.assertEqual(html_node.tag, "b")
+        self.assertEqual(html_node.value, "This is a BOLD text node")
+    
+    def test_link(self):
+        node = TextNode("This is a LINK node", TextType.LINK, url="www.yahoo.com")
+        html_node = text_node_to_html_node(node)
+        self.assertEqual(html_node.tag, "a")
+        self.assertEqual(html_node.value, "This is a LINK node")
+        self.assertEqual(html_node.props['href'], "www.yahoo.com")
+
+    def test_image(self):
+        node = TextNode("This is an IMAGE node", TextType.IMAGE, url="www.blah.com/image.jpg")
+        html_node = text_node_to_html_node(node)
+        self.assertEqual(html_node.tag, "img")
+        self.assertEqual(html_node.value, "")
+        self.assertEqual(html_node.props['src'], "www.blah.com/image.jpg")
+
 
 class TestLeafNode(unittest.TestCase):
     def test_leaf_to_html_p(self):
