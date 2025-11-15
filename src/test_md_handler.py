@@ -99,6 +99,56 @@ class TestMdHandler(unittest.TestCase):
             ],
             new_nodes,        
         )
+        
+    def test_markdown_to_blocks(self): 
+        # NOTE: the spacing below is NECESSARY (multi-line string literal)
+        md = """
+This is **bolded** paragraph followed by an eager two newlines
+
+
+This is another paragraph with _italic_ text and `code` here
+This is the same paragraph on a new line
+
+- This is a list
+- with items
+"""
+        blocks = markdown_to_blocks(md)
+        self.assertEqual(
+            blocks,
+            [
+                "This is **bolded** paragraph followed by an eager two newlines",
+                "This is another paragraph with _italic_ text and `code` here\nThis is the same paragraph on a new line",
+                "- This is a list\n- with items",
+            ],
+        )
+    
+    def test_block_to_block_type(self):
+        blocks = [
+                   "This is a regular paragraph.",
+                   "# Heading 1",
+                   "### Heading 3",
+                   "###### Heading 6",
+                   "> When in the course of human events...",
+                   "``` print(\"Hello, world.\") ```",
+                   """- milk
+- eggs
+- coffee
+- hatchet
+""",
+                   """1. Do
+2. Re
+3. Fa
+4. So
+""",
+                 ]
+        answers = [BlockType.PARAGRAPH, 
+                   BlockType.HEADING, BlockType.HEADING, BlockType.HEADING,
+                   BlockType.QUOTE, BlockType.CODE, 
+                   BlockType.UNORDERED_LIST, BlockType.ORDERED_LIST]
+        for i in range(0,len(blocks)):
+            answer = block_to_block_type(blocks[i])
+            self.assertEqual(answer, answers[i])
+        
 
 if __name__ == "__main__":
     unittest.main()

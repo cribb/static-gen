@@ -1,6 +1,16 @@
 # markdown
 import re
+from enum import Enum
 from textnode import TextNode, TextType
+
+class BlockType(Enum):
+    PARAGRAPH = "paragraph"
+    HEADING   = "heading"
+    CODE = "code"
+    QUOTE = "quote"
+    UNORDERED_LIST = "unordered_list"
+    ORDERED_LIST = "ordered_list"
+
 
 def split_nodes_delimiter(old_node_list, delimiter, text_type):
     
@@ -29,6 +39,7 @@ def split_nodes_delimiter(old_node_list, delimiter, text_type):
             count += 1
         
     return new_node_list
+
 
 def split_nodes_link(nodelist):
     regex_link_delimiter = r"(?<!!)(\[[^\[\]]*\]\([^\(\)]*\))"
@@ -100,7 +111,34 @@ def text_to_textnodes(text):
     return nodelist
 
 def markdown_to_blocks(markdown):
-    pass
+    
+    split_md = markdown.split('\n\n')
+    striplist = list(map(lambda x:x.strip(), split_md))
+    blocklist = list(filter(None, striplist))
+
+    return blocklist
+
+def block_to_block_type(md_block):
+
+    split_block = md_block.split(sep=None, maxsplit=1)
+    header = split_block[0]
+    # N = len(header)
+    # print(f"My block header is: {header}, which is {N} characters long.")
+
+    match header:
+        case '#' | '##' | '###' | '####' | '#####' | '######':
+            return BlockType.HEADING
+        case '>':
+            return BlockType.QUOTE
+        case '```':
+            return BlockType.CODE
+        case '-':
+            return BlockType.UNORDERED_LIST
+        case '1.': 
+            return BlockType.ORDERED_LIST
+        case _:
+            return BlockType.PARAGRAPH
+
 
 
 def extract_markdown_images(text):
