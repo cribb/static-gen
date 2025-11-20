@@ -44,6 +44,12 @@ class LeafNode(HTMLNode):
     def __init__(self, tag, value, children=None, props=None):
         super().__init__(tag, value, None, props)
 
+    def __eq__(self, other):
+        return (isinstance(other, LeafNode) and 
+               self.tag == other.tag and 
+               self.value == other.value and
+               self.props == other.props)
+
     def __repr__(self):
         report = f"LeafNode- tag: {self.tag}, value: {self.value}, props: {self.props}"
         return report 
@@ -65,6 +71,12 @@ class ParentNode(HTMLNode):
     def __repr__(self):
         return f"ParentNode- tag: {self.tag}, children: {self.children}, props: {self.props}"
     
+    def __eq__(self, other):
+        return (isinstance(other, ParentNode) and 
+               self.tag == other.tag and 
+               self.children == other.children and
+               self.props == other.props)
+
     def to_html(self):
         # print(f"node: {self}")
         if self.tag is None:
