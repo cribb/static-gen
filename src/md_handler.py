@@ -2,6 +2,7 @@
 import re
 from enum import Enum
 from textnode import TextNode, TextType
+from htmlnode import ParentNode, LeafNode, text_node_to_html_node
 
 class BlockType(Enum):
     PARAGRAPH = "paragraph"
@@ -10,8 +11,7 @@ class BlockType(Enum):
     QUOTE = "quote"
     UNORDERED_LIST = "unordered_list"
     ORDERED_LIST = "ordered_list"
-
-
+                 
 def split_nodes_delimiter(old_node_list, delimiter, text_type):
     
     new_node_list = []
@@ -39,6 +39,23 @@ def split_nodes_delimiter(old_node_list, delimiter, text_type):
             count += 1
         
     return new_node_list
+
+
+def extract_markdown_images(text):
+    # regex -> markdown image tokens ![](): "\!\[(.*?)\]\((.*?)\)""
+    # !\[([^\[\]]*)\]\(([^\(\)]*)\)
+    markdown_image_regex = r"!\[([^\[\]]*)\]\(([^\(\)]*)\)"
+    matches = re.findall(markdown_image_regex, text)
+    return matches
+
+
+def extract_markdown_links(text):
+    # regex -> markdown link tokens with negative look-behind to 
+    # avoid collisions with image limks: "(?<!\!)\[(.*?)\]\((.*?)\)"
+    # "(?<!!)\[([^\[\]]*)\]\(([^\(\)]*)\)"
+    markdown_link_regex = r"(?<!!)\[([^\[\]]*)\]\(([^\(\)]*)\)"
+    matches = re.findall(markdown_link_regex, text)
+    return matches
 
 
 def split_nodes_link(nodelist):
@@ -110,6 +127,11 @@ def text_to_textnodes(text):
     # print(f"NodeList: {nodelist}")
     return nodelist
 
+def text_to_children(text):
+    textnodes = text_to_textnodes(text)
+    child_nodes = list(map(text_node_to_html_node, textnodes))
+    return child_nodes
+
 def markdown_to_blocks(markdown):
     
     split_md = markdown.split('\n\n')
@@ -118,12 +140,17 @@ def markdown_to_blocks(markdown):
 
     return blocklist
 
+
 def block_to_block_type(md_block):
 
     split_block = md_block.split(sep=None, maxsplit=1)
     header = split_block[0]
     # N = len(header)
     # print(f"My block header is: {header}, which is {N} characters long.")
+    
+    # text = md_block.strip(header)
+    # print(f"header: {header}")
+    # print(f"text: {text}")
 
     match header:
         case '#' | '##' | '###' | '####' | '#####' | '######':
@@ -140,19 +167,87 @@ def block_to_block_type(md_block):
             return BlockType.PARAGRAPH
 
 
+def markdown_to_html_node(markdown):
 
-def extract_markdown_images(text):
-    # regex -> markdown image tokens ![](): "\!\[(.*?)\]\((.*?)\)""
-    # !\[([^\[\]]*)\]\(([^\(\)]*)\)
-    markdown_image_regex = r"!\[([^\[\]]*)\]\(([^\(\)]*)\)"
-    matches = re.findall(markdown_image_regex, text)
-    return matches
+    blocks = markdown_to_blocks(markdown)
 
-def extract_markdown_links(text):
-    # regex -> markdown link tokens with negative look-behind to 
-    # avoid collisions with image limks: "(?<!\!)\[(.*?)\]\((.*?)\)"
-    # "(?<!!)\[([^\[\]]*)\]\(([^\(\)]*)\)"
-    markdown_link_regex = r"(?<!!)\[([^\[\]]*)\]\(([^\(\)]*)\)"
-    matches = re.findall(markdown_link_regex, text)
-    return matches
+    hnodes = []
+    for block in blocks:
+        hnode = block_to_html_node(block)
+        print(hnode)
+        hnodes.append(hnode)        
+    
+    return ParentNode("div", hnodes, None)
+
+
+def block_to_html_node(block):
+    blocktype = block_to_block_type(block)
+
+    match blocktype:
+        case BlockType.PARAGRAPH:
+            return paragraph_to_htmlnode(block)
+        case BlockType.HEADING:
+            return heading_to_htmlnode(block)
+        case BlockType.QUOTE:
+            return quote_to_htmlnode(block)         
+        case BlockType.CODE:
+            return code_to_htmlnode(block)
+        case BlockType.UNORDERED_LIST:
+            return unorderedlist_to_htmlnode(block)
+        case BlockType.ORDERED_LIST:
+            return orderedlist_to_htmlnode(block)
+        case _:
+            raise ValueError("Unknown BlockType")
+            
+
+def paragraph_to_htmlnode(block):
+    tmp = block.strip()
+    pgraph = tmp.replace('\n', ' ')
+    children = text_to_children(pgraph)
+    return ParentNode("p", children)
+
+def heading_to_htmlnode(block):
+    # isolate the #'s that demarcate the heading texttype
+    mdheading = r"^(\#{1,6})\s*([^\#]*)\s*"
+    tmp = re.findall(mdheading, block)
+    heading,text = tmp[0][0],tmp[0][1]
+    children = text_to_children(text)
+    return ParentNode(f"h{len(heading)}", children)
+
+def quote_to_htmlnode(block):
+    # isolate the '>' that demarcates the quote texttype
+    text = block.lstrip("> ").strip()
+    children = text_to_children(text)
+    return ParentNode("blockquote", children)
+
+def code_to_htmlnode(block):
+    text = block[4:-3]
+    tn = TextNode(text, TextType.TEXT)
+    children = text_node_to_html_node(tn)
+    # child = text_node_to_html_node(textnode)
+    code = ParentNode("code", [children])
+    return ParentNode("pre", [code])
+
+def unorderedlist_to_htmlnode(block):
+    lines = block.split('\n')
+    new_lines = list(filter(None, lines))
+    list_nodes = []
+    for line in new_lines: 
+        text = line.lstrip('- ').strip()
+        children = text_to_children(text)
+        list_nodes.append(ParentNode("li", children))
+    return ParentNode("ul", list_nodes)
+
+def orderedlist_to_htmlnode(block):
+    lines = block.split('\n')
+    new_lines = list(filter(None, lines))
+    list_nodes = []
+    for line in new_lines:
+        text = line[3:].strip()
+        children = text_to_children(text)
+        list_nodes.append(ParentNode("li", children))
+    return ParentNode("ol", list_nodes)
+
+
+
 
