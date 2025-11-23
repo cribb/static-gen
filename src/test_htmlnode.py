@@ -51,6 +51,12 @@ class TestLeafNode(unittest.TestCase):
         node = LeafNode("a", "My link to blah.com", props={"href":"www.blah.com"})
         self.assertEqual(node.to_html(), "<a href=\"www.blah.com\">My link to blah.com</a>")
 
+    def test_leaf_to_html_img(self):
+        node = LeafNode("img", "My image", props={"src":"image.jpg"})
+        self.assertEqual(node.to_html(), "<img src=image.jpg>")
+        node = LeafNode("img", "My image", props={"src":"image.jpg","alt":"Just an image."})
+        self.assertEqual(node.to_html(), "<img src=\"image.jpg\" alt=\"Just an image\">")
+        
     def test_leaf_to_html_no_tag(self):
         node = LeafNode(None, "Hello, world!")
         self.assertEqual(node.to_html(), "Hello, world!")
