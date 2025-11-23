@@ -1,6 +1,7 @@
 import os
 import glob
 import shutil
+import sys
 from textnode import TextNode, TextType
 from htmlnode import ParentNode, LeafNode
 from md_handler import *
@@ -30,8 +31,8 @@ def generate_page(from_path, template_path, dest_file):
     hnode = markdown_to_html_node(page_contents_md)
     html = hnode.to_html()
 
-
     newpage = page.replace(r"{{ Title }}", title).replace(r"{{ Content }}", html)
+    sitepage = newpage.replace('href="/', 'href="{basepath}').replace('src="/', 'src="{basepath}')
 
     # print("Resulting page...")
     # print(newpage)
@@ -70,27 +71,32 @@ def generate_pages_recursive(dir_content_path, template_file, dest_dir_path):
     # generate_page(from_path, template_path, dest_file):
     for md_filename in filelist:
         site_filename = md_filename.replace(dir_content_path, dest_dir_path)
-        html_filename = site_filename.replace(".md", ".html")
+        html_filename = site_filename.replace(".md", ".html")        
         print(f"source Markdown file: {md_filename}")
         print(f"destination html file: {html_filename}")
         generate_page(md_filename, template_file, html_filename)
     
     return
 
-def main():
-    root_path = "/home/jeremy/src/bootdev/static-gen/"
-    static_path = root_path + "static/"
-    public_path = root_path + "public/"
-    content_path = root_path + "content/"
+def main():    
+    
+    if sys.argv[1] and os.path.isdir(sys.argv[1]):
+        base_path = sys.argv[1]
+    else:
+        base_path = "/home/jeremy/src/bootdev/static-gen/"
+
+    static_path = base_path + "static/"
+    public_path = base_path + "docs/"
+    content_path = base_path + "content/"
 
     index_file = content_path + "index.md"
-    template_file = root_path + "template.html"
+    template_file = base_path + "template.html"
     dest_file = public_path + "index.html"
 
     print('Static Site Generator')
     print("---------------------")
-    if os.path.exists(root_path):
-        print(f"Root path: {root_path}")    
+    if os.path.exists(base_path):
+        print(f"Base/root path: {base_path}")    
     if os.path.exists(static_path):
         print(f"Static path: {static_path}")
     if os.path.exists(public_path):
