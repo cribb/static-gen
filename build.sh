@@ -1,3 +1,3 @@
 #!/bin/bash
-REPONAME=""
+REPONAME="static-gen"
 python3 src/main.py "/$REPONAME/"
