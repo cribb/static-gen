@@ -132,6 +132,16 @@ def text_to_children(text):
     child_nodes = list(map(text_node_to_html_node, textnodes))
     return child_nodes
 
+def extract_title(markdown):
+    lines = markdown.split('\n')
+    for line in lines:
+        if line.startswith("# "):
+            title = line.lstrip("# ")
+            return title
+    raise Exception("No page title found.")
+
+
+
 def markdown_to_blocks(markdown):
     
     split_md = markdown.split('\n\n')
@@ -140,31 +150,56 @@ def markdown_to_blocks(markdown):
 
     return blocklist
 
+def block_to_block_type(block):
+    lines = block.split("\n")
 
-def block_to_block_type(md_block):
+    if block.startswith(("# ", "## ", "### ", "#### ", "##### ", "###### ")):
+        return BlockType.HEADING
+    if len(lines) > 1 and lines[0].startswith("```") and lines[-1].startswith("```"):
+        return BlockType.CODE
+    if block.startswith(">"):
+        for line in lines:
+            if not line.startswith(">"):
+                return BlockType.PARAGRAPH
+        return BlockType.QUOTE
+    if block.startswith("- "):
+        for line in lines:
+            if not line.startswith("- "):
+                return BlockType.PARAGRAPH
+        return BlockType.UNORDERED_LIST
+    if block.startswith("1. "):
+        i = 1
+        for line in lines:
+            if not line.startswith(f"{i}. "):
+                return BlockType.PARAGRAPH
+            i += 1
+        return BlockType.ORDERED_LIST
+    return BlockType.PARAGRAPH
 
-    split_block = md_block.split(sep=None, maxsplit=1)
-    header = split_block[0]
-    # N = len(header)
-    # print(f"My block header is: {header}, which is {N} characters long.")
+# def block_to_block_type(md_block):
+
+#     split_block = md_block.split(sep=None, maxsplit=1)
+#     header = split_block[0]
+#     # N = len(header)
+#     # print(f"My block header is: {header}, which is {N} characters long.")
     
-    # text = md_block.strip(header)
-    # print(f"header: {header}")
-    # print(f"text: {text}")
+#     # text = md_block.strip(header)
+#     # print(f"header: {header}")
+#     # print(f"text: {text}")
 
-    match header:
-        case '#' | '##' | '###' | '####' | '#####' | '######':
-            return BlockType.HEADING
-        case '>':
-            return BlockType.QUOTE
-        case '```':
-            return BlockType.CODE
-        case '-':
-            return BlockType.UNORDERED_LIST
-        case '1.': 
-            return BlockType.ORDERED_LIST
-        case _:
-            return BlockType.PARAGRAPH
+#     match header:
+#         case '#' | '##' | '###' | '####' | '#####' | '######':
+#             return BlockType.HEADING
+#         case '>':
+#             return BlockType.QUOTE
+#         case '```':
+#             return BlockType.CODE
+#         case '-':
+#             return BlockType.UNORDERED_LIST
+#         case '1.': 
+#             return BlockType.ORDERED_LIST
+#         case _:
+#             return BlockType.PARAGRAPH
 
 
 def markdown_to_html_node(markdown):
@@ -174,7 +209,7 @@ def markdown_to_html_node(markdown):
     hnodes = []
     for block in blocks:
         hnode = block_to_html_node(block)
-        print(hnode)
+        # print(hnode)
         hnodes.append(hnode)        
     
     return ParentNode("div", hnodes, None)

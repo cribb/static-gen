@@ -10,8 +10,8 @@ testblocklist = [
                    "###### Heading 6",
                    "> When in the course of human events...",
                    "> To be or not to be, that is the question...",
-                   "``` print(\"Hello, world.\") ```",
-                   "``` 10 PRINT \"HELLO, WORLD!\"\n20 GOTO 10 ```",
+                   "Some code: ``` print(\"Hello, world.\") ```",
+                   "```\n10 PRINT \"HELLO, WORLD!\"\n20 GOTO 10\n```",
                    """- milk
 - eggs
 - coffee
@@ -123,6 +123,13 @@ class TestMdHandler(unittest.TestCase):
             new_nodes,        
         )
         
+    def test_extract_title(self):
+        mdtext = "\n This is a lof of text.\n# This is my title.\n\nIt's a doozy."
+        test_title = extract_title(mdtext)
+        answer = "This is my title."
+        self.assertEqual(test_title, answer)
+
+
     def test_markdown_to_blocks(self): 
         # NOTE: the spacing below is NECESSARY (multi-line string literal)
         md = """
@@ -150,14 +157,14 @@ This is the same paragraph on a new line
         answers = [BlockType.PARAGRAPH, 
                    BlockType.HEADING, BlockType.HEADING, BlockType.HEADING,
                    BlockType.QUOTE, BlockType.QUOTE, 
-                   BlockType.CODE, BlockType.CODE, 
+                   BlockType.PARAGRAPH, BlockType.CODE, 
                    BlockType.UNORDERED_LIST, BlockType.ORDERED_LIST]
         for i in range(0,len(testblocklist)):
             answer = block_to_block_type(testblocklist[i])
             self.assertEqual(answer, answers[i])
     
     def test_paragraph_to_htmlnode(self):
-        block = testblocklist[0]
+        block = testblocklist[0,6]
         pnode = paragraph_to_htmlnode(block)
         answer = ParentNode("p", [LeafNode(None, "This is a regular paragraph. It contains two sentences.", props=None)])
         self.assertEqual(pnode, answer)
@@ -186,8 +193,8 @@ This is the same paragraph on a new line
             self.assertEqual(pnode, answer)
 
     def test_code_to_htmlnode(self):
-        blocks = testblocklist[6:7]
-        answers = [ ParentNode("pre", [ParentNode("code", [LeafNode(None, "print(\"Hello, world.\") ")])]),
+        blocks = [testblocklist[7]]
+        answers = [ #ParentNode("pre", [ParentNode("code", [LeafNode(None, "print(\"Hello, world.\") ")])]),
                     ParentNode("pre", [ParentNode("code", [LeafNode(None, "10 PRINT \"HELLO, WORLD!\"\n20 GOTO 10", props=None)],None)],None)
                     ]
         
